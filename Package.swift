@@ -10,8 +10,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "MetalTelemetry"),
-        .executableTarget(name: "MetalTask", dependencies: ["MetalTelemetry"]),
+        .target(name: "ModelInspection"),
+        .executableTarget(name: "MetalTask", dependencies: ["MetalTelemetry", "ModelInspection"]),
         .testTarget(name: "MetalTelemetryTests", dependencies: ["MetalTelemetry"]),
+        .testTarget(name: "ModelInspectionTests", dependencies: ["ModelInspection"]),
     ],
     swiftLanguageModes: [.v6]
 )

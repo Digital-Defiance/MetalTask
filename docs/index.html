@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MetalTask is a native GPU task manager for Apple Silicon Macs.">
+  <title>MetalTask · GPU monitoring for Apple Silicon</title>
+  <style>
+    :root { color-scheme: dark; background: #10151c; color: #eef4fa; font: 16px/1.6 system-ui, sans-serif; }
+    body { margin: 0; }
+    main { max-width: 58rem; margin: auto; padding: clamp(2rem, 8vw, 7rem) 1.5rem 4rem; }
+    h1 { font-size: clamp(3.5rem, 10vw, 7rem); letter-spacing: -.07em; line-height: 1; margin: 0 0 1rem; }
+    h2 { font-size: 1.25rem; margin: 0 0 .5rem; }
+    p { margin: 0 0 1rem; color: #b7c5d3; }
+    a { color: #85e7d0; text-underline-offset: .25em; }
+    header p { max-width: 37rem; font-size: 1.2rem; }
+    section { border-top: 1px solid #334252; margin-top: 2.5rem; padding-top: 1.5rem; }
+    pre { background: #19232e; color: #e3f8f3; padding: 1rem; border-radius: .55rem; overflow: auto; }
+    nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>MetalTask</h1>
+    <p>See which processes are using the GPU on your Apple Silicon Mac and how much graphics memory macOS attributes to them.</p>
+    <nav aria-label="Project links">
+      <a href="#install">Install</a>
+      <a href="https://github.com/Digital-Defiance/MetalTask">Source on GitHub</a>
+    </nav>
+  </header>
+  <section id="install">
+    <h2>Install with Homebrew</h2>
+    <pre><code>brew install digital-defiance/tap/metaltask
+metaltask</code></pre>
+    <p>The formula builds from source. Select Xcode with Swift 6 first. MetalTask targets macOS 14 and has been tested on an M4 Max running macOS 26.</p>
+  </section>
+  <section>
+    <h2>Monitor and compare workloads</h2>
+    <p>See five minutes of device activity and sort GPU processes by activity or graphics footprint. Export local JSON snapshots and compare the readings before and after a workload change.</p>
+    <pre><code>metaltask --snapshot-json &gt; before.json
+metaltask --snapshot-json &gt; after.json
+metaltask --compare before.json after.json</code></pre>
+  </section>
+  <section>
+    <h2>Inspect model metadata</h2>
+    <p>Check an existing local Ollama service or select a GGUF file in Loaded Models. Ollama is optional.</p>
+  </section>
+</main>
+</body>
+</html>
