@@ -49,7 +49,27 @@ Expect physical memory, default Metal device information, device activity, and a
 - GitHub repository visibility is public. The first [GitHub Pages workflow run](https://github.com/Digital-Defiance/MetalTask/actions/runs/43499738938) succeeded. The [custom domain](https://metaltask.digitaldefiance.org/) returned HTTPS 200 with the correct page, and GitHub confirmed HTTPS enforcement is enabled.
 - The [v0.2.0 source release](https://github.com/Digital-Defiance/MetalTask/releases/tag/v0.2.0) is published from `5a6831b`. The [public Homebrew formula](https://github.com/Digital-Defiance/homebrew-tap/blob/main/Formula/metaltask.rb) was updated at tap commit `9df43bb`. The source checkout at `/Volumes/Code/homebrew-tap` contains the update.
 - Verified `brew install --build-from-source digital-defiance/tap/metaltask`, `brew test digital-defiance/tap/metaltask`, `metaltask --sample-gpu`, and launch from the installed app bundle. Verified `brew upgrade digital-defiance/tap/metaltask` from `0.1.0_1` to `0.2.0`, `brew test`, and bundle version 0.2.0. The installed tap had equivalent commits under different hashes, so its old branch was retained as `codex/metaltask-tap-pre-020` and its `main` now tracks GitHub again. The formula builds and ad hoc signs the app locally. Developer ID signing, notarization, and macOS 14 runtime validation remain release work.
+
+#### Developer ID release handoff
+
+- **Current status.** The team-specific `MetalTask-Notary` profile works. The old `AC_PASSWORD` profile still returned 403 on the last check. Apple accepted the approved 0.3.0 DMG under submission `f6110217-984b-4765-91f3-27f4ece2b5a0`. The final DMG and app inside the ZIP both passed stapler and Gatekeeper validation. The extracted app produced a live GPU reading. All 34 Swift tests passed before submission.
+- **Warp12 reference.** `/Volumes/Code/Warp12/scripts/build-macos.sh` validates the chosen Developer ID identity, infers its team, checks configured notarization credentials, and updates GitHub Releases and the tap with the DMG checksum. Use its explicit identity selection and release-to-cask flow. MetalTask's current SwiftPM build targets Apple Silicon. Keep signing and notarization independent of Tauri, and make successful notarization and verification prerequisites for publishing. Give replacement binaries a new version so Homebrew checksums remain stable. Warp12's separate notarization credentials were not tested.
+- **Build and publish.** `scripts/build-release.sh` checks the notary profile, tests and signs the Apple Silicon build, and submits the DMG. `scripts/finish-release.sh` staples an accepted DMG and creates a ZIP containing the stapled app, then verifies both and writes SHA-256 checksums. `scripts/publish-release.sh` checks the three local files and uploads them to a new GitHub release for an existing tag. The source formula still uses the ad hoc packaging path.
+- **Release verification.** For a new version, check Finder launch, GPU chart, standard-user graphics footprint, local LM Studio, and GGUF selection from a freshly downloaded build on a clean Mac or user account. Keep the source formula for Terminal use and point the cask to the final DMG checksum.
 - [ ] The macOS 14 deployment target still needs runtime validation. Additional Apple Silicon generations, wake behavior, broader process and footprint coverage, model adapters, and distribution remain open.
+
+Once the intended Apple team and its working profile are confirmed, run from the repository root. Choose a new release version when publishing a replacement binary.
+
+```sh
+security find-identity -v -p codesigning
+xcrun notarytool history --keychain-profile YOUR_PROFILE --output-format json
+APPLE_SIGNING_IDENTITY="Developer ID Application: Digital Defiance (J6887N729S)" \
+  METALTASK_NOTARY_PROFILE=MetalTask-Notary \
+  bash scripts/build-release.sh 0.3.0 /tmp/metaltask-release-0.3.0
+(cd /tmp/metaltask-release-0.3.0 && shasum -a 256 -c MetalTask-0.3.0-arm64.sha256)
+# After pushing the corresponding source tag:
+bash scripts/publish-release.sh 0.3.0 /tmp/metaltask-release-0.3.0
+```
 
 ## Device utilization validation
 

@@ -12,6 +12,8 @@ Use **Loaded Models → GGUF file → Choose GGUF File** to inspect declared met
 
 ## Install with Homebrew
 
+For a notarized app, run `brew install --cask digital-defiance/tap/metaltask` or download the DMG or ZIP from [GitHub Releases](https://github.com/Digital-Defiance/MetalTask/releases/latest). The source formula below provides the Terminal command.
+
 Select Xcode with Swift 6, then run:
 
 ```sh

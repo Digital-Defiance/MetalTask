@@ -1,12 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-if [[ $# != 3 || ! -x "$1" || ! "$3" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Usage: package-app.sh EXECUTABLE DESTINATION VERSION" >&2
+if [[ $# -lt 3 || $# -gt 4 || ! -f "$1" || ! -x "$1" || ! "$3" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Usage: package-app.sh EXECUTABLE DESTINATION VERSION [DEVELOPER_ID]" >&2
     exit 2
 fi
 
 bundle="$2/MetalTask.app"
+identity="${4:--}"
 mkdir -p "$bundle/Contents/MacOS"
 install -m 755 "$1" "$bundle/Contents/MacOS/MetalTask"
 cat > "$bundle/Contents/Info.plist" <<EOF
@@ -26,4 +27,9 @@ cat > "$bundle/Contents/Info.plist" <<EOF
 </plist>
 EOF
 /usr/bin/plutil -lint "$bundle/Contents/Info.plist"
-/usr/bin/codesign --force --sign - "$bundle"
+if [[ "$identity" == "-" ]]; then
+    /usr/bin/codesign --force --sign - "$bundle"
+else
+    /usr/bin/codesign --force --options runtime --timestamp --sign "$identity" "$bundle"
+fi
+/usr/bin/codesign --verify --deep --strict "$bundle"
