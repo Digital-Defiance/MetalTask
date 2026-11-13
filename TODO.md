@@ -46,7 +46,7 @@ Expect physical memory, default Metal device information, device activity, and a
 
 ### Distribution
 
-- GitHub repository visibility is public. The first [GitHub Pages workflow run](https://github.com/Digital-Defiance/MetalTask/actions/runs/43499738938) succeeded. The GitHub Pages URL redirects to the configured custom domain, where the site returned HTTP 200. GitHub had yet to issue the domain's HTTPS certificate. Check Settings → Pages for certificate status, then enable Enforce HTTPS and verify the secure URL.
+- GitHub repository visibility is public. The first [GitHub Pages workflow run](https://github.com/Digital-Defiance/MetalTask/actions/runs/43499738938) succeeded. The [custom domain](https://metaltask.digitaldefiance.org/) returned HTTPS 200 with the correct page, and GitHub confirmed HTTPS enforcement is enabled.
 - The [v0.1.0 source release](https://github.com/Digital-Defiance/MetalTask/releases/tag/v0.1.0) is published. The [public Homebrew formula](https://github.com/Digital-Defiance/homebrew-tap/blob/main/Formula/metaltask.rb) is on tap `main` at `c4ac122`. The local tap checkout at `/Volumes/Code/homebrew-tap` has the same formula.
 - Verified `brew install --build-from-source digital-defiance/tap/metaltask`, `brew test digital-defiance/tap/metaltask`, `metaltask --sample-gpu`, and launch from the installed app bundle. Homebrew installed `0.1.0_1`. The formula builds and ad hoc signs the app locally. Developer ID signing, notarization, and macOS 14 runtime validation remain release work.
 - [ ] The macOS 14 deployment target still needs runtime validation. Additional Apple Silicon generations, wake behavior, broader process and footprint coverage, model adapters, and distribution remain open.
@@ -164,7 +164,7 @@ swift run MetalTask
 
 1. Open the LM Studio tab in a development build and confirm the already-loaded instance appears. Check empty, unavailable and authenticated states where a test service or existing configuration permits. Keep model metadata attached to the service until a process PID and start time can be corroborated.
 2. Check the llama.cpp tab with an existing single-model server, including sleep state if supported. Confirm a router or stopped server gives clear feedback. Try a representative real GGUF and one split shard if available.
-3. After smoke testing, tag a new source release, fetch the exact GitHub archive and checksum, update `/Volumes/Code/homebrew-tap/Formula/metaltask.rb`, and verify a Homebrew upgrade. Preserve the existing Xcode requirement, the SwiftPM build arguments used under Homebrew, and the app bundle smoke test. Verify GitHub Pages HTTPS certificate status before enabling HTTPS enforcement.
+3. After smoke testing, tag a new source release, fetch the exact GitHub archive and checksum, update `/Volumes/Code/homebrew-tap/Formula/metaltask.rb`, and verify a Homebrew upgrade. Preserve the existing Xcode requirement, the SwiftPM build arguments used under Homebrew, and the app bundle smoke test. Verify the custom domain still serves the install page after publishing.
 4. Scope MLX metadata inspection using a selected config and shard metadata. Continue the two-workload window check, in-flight helper cancellation, sleep/wake, and telemetry validation on a second Apple Silicon generation and macOS 14 when available.
 
 ## Subsequent milestones
