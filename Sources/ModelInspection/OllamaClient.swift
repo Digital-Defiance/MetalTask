@@ -10,17 +10,9 @@ public struct OllamaModel: Equatable, Sendable {
 }
 
 public struct OllamaClient: Sendable {
-    public enum Failure: Error, Equatable, Sendable {
-        case serviceUnavailable
-        case timedOut
-        case redirect
-        case httpStatus(Int)
-        case responseTooLarge
-        case invalidResponse
-    }
-
-    static let responseLimit = 256 * 1_024
-    private let endpoint: URL
+    public typealias Failure = LocalModelRequestFailure
+    static let responseLimit = LocalModelRequest.responseLimit
+    private let port: UInt16
     private let timeout: TimeInterval
 
     public init() {
@@ -29,48 +21,12 @@ public struct OllamaClient: Sendable {
 
     // Keep the destination local even when using a test server on a different port.
     init(port: UInt16, timeout: TimeInterval) {
-        endpoint = URL(string: "http://127.0.0.1:\(port)/api/ps")!
+        self.port = port
         self.timeout = timeout
     }
 
     public func loadedModels() async throws -> [OllamaModel] {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = timeout
-        configuration.timeoutIntervalForResource = timeout
-        configuration.waitsForConnectivity = false
-        configuration.urlCache = nil
-        configuration.httpCookieStorage = nil
-        configuration.httpShouldSetCookies = false
-        configuration.urlCredentialStorage = nil
-        configuration.connectionProxyDictionary = [
-            "HTTPEnable": 0, "HTTPSEnable": 0, "SOCKSEnable": 0,
-            "ProxyAutoConfigEnable": 0, "ProxyAutoDiscoveryEnable": 0,
-        ]
-        let session = URLSession(configuration: configuration, delegate: LocalRequestDelegate(),
-                                 delegateQueue: nil)
-        defer { session.invalidateAndCancel() }
-
-        do {
-            var request = URLRequest(url: endpoint, cachePolicy: .reloadIgnoringLocalCacheData)
-            request.httpMethod = "GET"
-            request.setValue("application/json", forHTTPHeaderField: "Accept")
-            let (bytes, response) = try await session.bytes(for: request)
-            guard let http = response as? HTTPURLResponse else { throw Failure.invalidResponse }
-            if (300..<400).contains(http.statusCode) { throw Failure.redirect }
-            guard http.statusCode == 200 else { throw Failure.httpStatus(http.statusCode) }
-            guard http.expectedContentLength <= Self.responseLimit else { throw Failure.responseTooLarge }
-
-            var body = Data()
-            for try await byte in bytes {
-                guard body.count < Self.responseLimit else { throw Failure.responseTooLarge }
-                body.append(byte)
-            }
-            try Task.checkCancellation()
-            return try Self.decode(body)
-        } catch let error as URLError {
-            if Task.isCancelled || error.code == .cancelled { throw CancellationError() }
-            throw error.code == .timedOut ? Failure.timedOut : Failure.serviceUnavailable
-        }
+        try Self.decode(await LocalModelRequest.get(port: port, path: "/api/ps", timeout: timeout))
     }
 
     static func decode(_ data: Data) throws -> [OllamaModel] {
@@ -113,14 +69,5 @@ public struct OllamaClient: Sendable {
         enum CodingKeys: String, CodingKey {
             case quantization = "quantization_level"
         }
-    }
-}
-
-private final class LocalRequestDelegate: NSObject, URLSessionTaskDelegate {
-    func urlSession(
-        _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
-        newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void
-    ) {
-        completionHandler(nil)
     }
 }

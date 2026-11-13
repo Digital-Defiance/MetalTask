@@ -3,6 +3,10 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct LoadedModelsView: View {
+    private enum Source {
+        case ollama, gguf, llamaServer, lmStudio
+    }
+
     private enum Status {
         case ready
         case checking
@@ -17,24 +21,30 @@ struct LoadedModelsView: View {
     @State private var selectedFile: URL?
     @State private var fileRequestID: UUID?
     @State private var fileResult: Result<GGUFMetadata, Error>?
-    @State private var showsGGUF = false
+    @State private var source = Source.ollama
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Picker("Model source", selection: $showsGGUF) {
-                Text("Local Ollama").tag(false)
-                Text("GGUF file").tag(true)
+            Picker("Model source", selection: $source) {
+                Text("Local Ollama").tag(Source.ollama)
+                Text("GGUF file").tag(Source.gguf)
+                Text("llama.cpp server").tag(Source.llamaServer)
+                Text("LM Studio").tag(Source.lmStudio)
             }
             .pickerStyle(.segmented)
             Group {
-                if showsGGUF { ggufContent }
-                else { content }
+                switch source {
+                case .ollama: content
+                case .gguf: ggufContent
+                case .llamaServer: LlamaServerView()
+                case .lmStudio: LMStudioView()
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             HStack {
-                if showsGGUF {
+                if source == .gguf {
                     Button("Choose GGUF File…") { choosingFile = true }
-                } else {
+                } else if source == .ollama {
                     Button("Check Local Ollama") {
                         status = .checking
                         requestID = UUID()

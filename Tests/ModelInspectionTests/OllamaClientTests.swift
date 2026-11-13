@@ -32,6 +32,15 @@ func rejectsUnsupportedResponses(_ body: String) {
     #expect(models.map(\.name) == ["local-test"])
 }
 
+@Test func readsLlamaPropertiesThroughTheSharedLoopbackTransport() async throws {
+    let properties = try await withServer(
+        reply: response(body: #"{"total_slots":4}"#), expectedRequest: "GET /props HTTP/1.1"
+    ) { port in
+        try await LlamaServerClient(port: port).properties()
+    }
+    #expect(properties.totalSlots == 4)
+}
+
 @Test func rejectsRedirectAndOversizedResponse() async throws {
     try await withServer(reply: "HTTP/1.1 302 Found\r\nLocation: /another\r\nContent-Length: 0\r\n\r\n") { port -> Void in
         await #expect(throws: OllamaClient.Failure.redirect) {
@@ -104,7 +113,9 @@ private func readyPort(
     throw CancellationError()
 }
 
-private func withServer<T>(reply: String?, request: (UInt16) async throws -> T) async throws -> T {
+private func withServer<T>(
+    reply: String?, expectedRequest: String? = nil, request: (UInt16) async throws -> T
+) async throws -> T {
     let listener = try makeListener()
     let (connections, continuation) = AsyncStream<NWConnection>.makeStream()
     defer {
@@ -119,10 +130,15 @@ private func withServer<T>(reply: String?, request: (UInt16) async throws -> T) 
     async let serve: Void = {
         for await connection in connections {
             connection.start(queue: .global())
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 4096) { _, _, complete, error in
+            connection.receive(minimumIncompleteLength: expectedRequest?.utf8.count ?? 1, maximumLength: 4096) {
+                data, _, complete, error in
                 if complete || error != nil {
                     connection.cancel()
                     return
+                }
+                if let expectedRequest {
+                    let requestLine = String(decoding: data ?? Data(), as: UTF8.self)
+                    #expect(requestLine.hasPrefix(expectedRequest))
                 }
                 if let reply {
                     connection.send(content: Data(reply.utf8), completion: .contentProcessed { _ in

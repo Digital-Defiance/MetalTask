@@ -1,4 +1,6 @@
+import Darwin
 import MetalTelemetry
+import ModelInspection
 import SwiftUI
 
 @main
@@ -11,6 +13,14 @@ enum MetalTaskEntryPoint {
             await SnapshotCommand.capture(arguments.dropFirst())
         case _ where arguments.first == "--compare":
             SnapshotCommand.compare(arguments.dropFirst())
+        case ["--check-lm-studio"]:
+            do {
+                let instances = try await LMStudioClient().loadedInstances()
+                print("LM Studio loaded instances: \(instances.count)")
+            } catch {
+                FileHandle.standardError.write(Data("LM Studio check failed: \(error)\n".utf8))
+                exit(EXIT_FAILURE)
+            }
         case ["--sample-gpu"]:
             switch DeviceActivitySample.capture().reading {
             case let .percent(value):

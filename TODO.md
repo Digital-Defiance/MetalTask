@@ -23,7 +23,7 @@ swift run MetalTask --sample-process-gpu
 swift run MetalTask
 ```
 
-Expect physical memory, default Metal device information, device activity, and a process table filterable by name or PID. `--sample-gpu` takes a single native reading. `--sample-process-gpu` takes two readings one second apart and prints observed process GPU milliseconds per second and coverage. Quit the window with Command-Q. Signing and an installable app bundle are release work.
+Expect physical memory, default Metal device information, device activity, and a process table filterable by name or PID. `--sample-gpu` takes a single native reading. `--sample-process-gpu` takes two readings one second apart and prints observed process GPU milliseconds per second and coverage. Quit the window with Command-Q. See Distribution for the Homebrew app bundle and remaining release work.
 
 ### Current state
 
@@ -42,10 +42,12 @@ Expect physical memory, default Metal device information, device activity, and a
 - [x] Added an opt-in Ollama inspector under **Loaded Models**. Verified that the app displays the unreachable state on this Mac and renders all supported metadata from a one-shot loopback fixture. The test suite uses ephemeral loopback listeners and needs no Ollama installation or downloaded models.
 - [x] Added a GGUF file picker and bounded metadata reader. Synthetic v2/v3 files exercise metadata, tokenizer arrays, and tensor offsets. The Homebrew-installed app opened a synthetic v3 file and showed its name, architecture, file type, context length, tensor count, and version. Real model-file compatibility remains open.
 
+- [x] The development build adds a read-only llama.cpp inspector. Synthetic tests verify metadata and the exact loopback `GET /props` request without a model query. All 33 tests and the release build passed. A real llama.cpp server and the new tab still need a smoke test. Homebrew 0.1.0_1 includes GGUF and Ollama.
+
 ### Distribution
 
 - GitHub repository visibility is public. The first [GitHub Pages workflow run](https://github.com/Digital-Defiance/MetalTask/actions/runs/43499738938) succeeded. The GitHub Pages URL redirects to the configured custom domain, where the site returned HTTP 200. GitHub had yet to issue the domain's HTTPS certificate. Check Settings → Pages for certificate status, then enable Enforce HTTPS and verify the secure URL.
-- The [v0.1.0 source release](https://github.com/Digital-Defiance/MetalTask/releases/tag/v0.1.0) is published. The [public Homebrew formula](https://github.com/Digital-Defiance/homebrew-tap/blob/main/Formula/metaltask.rb) is on tap `main` at `4c144a7`. The local tap checkout at `/Volumes/Code/homebrew-tap` has the same formula.
+- The [v0.1.0 source release](https://github.com/Digital-Defiance/MetalTask/releases/tag/v0.1.0) is published. The [public Homebrew formula](https://github.com/Digital-Defiance/homebrew-tap/blob/main/Formula/metaltask.rb) is on tap `main` at `c4ac122`. The local tap checkout at `/Volumes/Code/homebrew-tap` has the same formula.
 - Verified `brew install --build-from-source digital-defiance/tap/metaltask`, `brew test digital-defiance/tap/metaltask`, `metaltask --sample-gpu`, and launch from the installed app bundle. Homebrew installed `0.1.0_1`. The formula builds and ad hoc signs the app locally. Developer ID signing, notarization, and macOS 14 runtime validation remain release work.
 - [ ] The macOS 14 deployment target still needs runtime validation. Additional Apple Silicon generations, wake behavior, broader process and footprint coverage, model adapters, and distribution remain open.
 
@@ -140,11 +142,30 @@ Both captures must come from the same boot session. For a footprint comparison o
 
 Verified on the M4 Max with `Tools/GraphicsFootprintWorkload.swift`: a targeted capture during the hold recorded 67,272,704 bytes. A second capture after release recorded 163,840 bytes for the same process identity. The comparison reported a decrease of 67,108,864 bytes (64 MiB). The updated window showed fresh activity baselines and pending footprint cells on reopen, then populated both types of reading.
 
-## Next session · Start llama.cpp runtime inspection
+## Runtime inspection handoff
 
-1. Probe a configured local llama.cpp server for runtime-reported metadata when available. Use the Ollama adapter's loopback and timeout constraints. A real Ollama smoke test remains open and can wait until an existing service and loaded model are available.
-2. Exercise GGUF inspection with representative real files if available, including one shard of a split model. Synthetic fixtures cover v2 and v3 metadata, unsupported versions, truncation, length limits, and invalid offsets.
-3. Continue hardware validation in parallel with feature work. Verify the two-workload sequence in the window, directly observe close while `footprint` is in flight, and check the chart after sleep/wake. Repeat telemetry checks on a second Apple Silicon generation and macOS 14 where available.
+The maintainer uses LM Studio. On 2026-11-13 its existing loopback server at `127.0.0.1:1234` returned five catalog entries and one loaded instance. The release-built development command below reported one loaded instance through MetalTask's own adapter. No credentials, model names, model downloads, inference requests, or server changes were needed.
+
+```sh
+cd /Volumes/Code/MetalTask
+swift test
+swift build -c release
+swift run MetalTask --check-lm-studio
+swift run MetalTask
+```
+
+- **LM Studio** — In **Loaded Models → LM Studio**, enter the local port and select **Check LM Studio**. The adapter reads native `GET /api/v1/models`, flattens only `loaded_instances`, and ignores downloaded-only catalog entries. It reports service-level model name, instance ID, architecture, quantization, configured context and KV-cache offload when available. The offload flag is a configuration value. The optional token is held in the view session and sent only to the selected loopback port. Redirects are refused. The CLI check uses port 1234 and prints only a count.
+- **llama.cpp** — In **Loaded Models → llama.cpp server**, enter the port of an already-running single-model server. MetalTask sends unqualified `GET /props` without a model query, displays the configured filename basename, context, slots and sleep status, and ignores prompt and template fields. A synthetic server verified the exact request.
+- **Ollama** — The v0.1.0 inspector was verified against a synthetic server and with Ollama absent. An existing real server with a loaded model is still needed for runtime verification.
+- **GGUF** — Homebrew 0.1.0_1 includes the file picker. Verified v2/v3 fixtures in tests and a synthetic v3 file in the installed app. Real-world model files, split shards and other byte orders remain coverage work. Inspection is limited to one selected file.
+- The development suite passed all 34 tests and the release build on the M4 Max. The LM Studio CLI was also verified against the real local service. UI checks for the two new tabs, LM Studio authentication, and a real llama.cpp server remain open. The public Homebrew formula still installs v0.1.0_1. The two new runtime adapters are on the development branch tip of `main` and are pending a new release tag and tap update.
+
+## Next session · Verify and release the runtime adapters
+
+1. Open the LM Studio tab in a development build and confirm the already-loaded instance appears. Check empty, unavailable and authenticated states where a test service or existing configuration permits. Keep model metadata attached to the service until a process PID and start time can be corroborated.
+2. Check the llama.cpp tab with an existing single-model server, including sleep state if supported. Confirm a router or stopped server gives clear feedback. Try a representative real GGUF and one split shard if available.
+3. After smoke testing, tag a new source release, fetch the exact GitHub archive and checksum, update `/Volumes/Code/homebrew-tap/Formula/metaltask.rb`, and verify a Homebrew upgrade. Preserve the existing Xcode requirement, the SwiftPM build arguments used under Homebrew, and the app bundle smoke test. Verify GitHub Pages HTTPS certificate status before enabling HTTPS enforcement.
+4. Scope MLX metadata inspection using a selected config and shard metadata. Continue the two-workload window check, in-flight helper cancellation, sleep/wake, and telemetry validation on a second Apple Silicon generation and macOS 14 when available.
 
 ## Subsequent milestones
 
@@ -152,7 +173,7 @@ Verified on the M4 Max with `Tools/GraphicsFootprintWorkload.swift`: a targeted 
 | --- | --- | --- |
 | P1 · Process table verification | Smoke-test the window, validate multi-client attribution and coverage on additional hardware and macOS versions. | The two-workload sequence is visible in the table and survives window reopen and wake without stale attribution. |
 | P1 · Graphics footprint verification | Validate overhead, cancellation, and standard-user coverage across supported OS versions. | Denied, exited, timed-out, and unsupported cases remain distinguishable. Other rows and device polling keep updating. |
-| P2 · Model details | Extend the opt-in Ollama inspector with llama.cpp/GGUF and MLX inspection. | Fixture-tested bounded parsing and timeouts. Metadata source and PID confidence are visible. Models can appear at service level without guessing the runner. |
+| P2 · Model details | Verify LM Studio and llama.cpp end to end, then add MLX inspection. | Fixture-tested bounded parsing and timeouts. Metadata source and PID confidence are visible. Models can appear at service level without guessing the runner. |
 | P3 · Device diagnostics | Validate gpucap power, clock, temperature, and throttling sources on the support matrix. | Each displayed metric has a documented source, unit, and unavailable state. |
 | P3 · Menu bar and polish | Add a menu-bar consumer, accessibility checks, and the performance soak. | Both views share one collector. Keyboard navigation and status labels work, and the measurements meet the validation gates in the spec. |
 | P3 · Model details (later) | Add optional PyTorch MPS inspection and optional persistent history with longer-range charts. | Opt-in only, no inference from process names, documented retention limits, and the live five-minute buffer stays bounded. |
