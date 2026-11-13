@@ -6,9 +6,9 @@ If you already use Ollama, open **Loaded Models** and select **Check Local Ollam
 
 Use **Loaded Models → GGUF file → Choose GGUF File** to inspect declared metadata in a local GGUF v2 or v3 file. Little-endian files are supported. For a split model, the inspector describes the selected shard and shows the declared shard count when available.
 
-The development build adds **Loaded Models → llama.cpp server**. Enter the port of an existing local server and select **Check Local Server** to read its configured model filename, context length, slot count, and sleep state when reported.
+**Loaded Models → llama.cpp server** reads the configured model filename, context length, slot count, and sleep state from an existing local server.
 
-The development build also supports **Loaded Models → LM Studio**. Start the local server from LM Studio’s Developer page if needed, enter its port (default `1234`), and select **Check LM Studio**. If the server requires authentication, enter its token in the optional secure field. MetalTask reads loaded instances through LM Studio’s native v1 API. For the default port without authentication, `swift run MetalTask --check-lm-studio` prints only the instance count.
+**Loaded Models → LM Studio** reads loaded instances through LM Studio’s native v1 API. Start the local server from LM Studio’s Developer page if needed, enter its port (default `1234`), and select **Check LM Studio**. If authentication is enabled, enter the token in the optional secure field. For the default port without authentication, `metaltask --check-lm-studio` prints only the instance count.
 
 ## Install with Homebrew
 
