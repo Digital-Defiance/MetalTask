@@ -29,7 +29,7 @@ Expect physical memory, default Metal device information, device activity, and a
 
 - [x] The Swift 6 bootstrap supplies startup hardware metadata through `SystemSnapshot` and preserves the MIT license.
 - [x] `DeviceActivitySample` matches the default Metal device by registry ID and reads the activity percentage in-process. The window samples device and process activity on a serial worker about once per second. Zero remains a valid reading.
-- [x] On an Apple M4 Max running macOS 26.6.2 (25G83), Xcode 27.0 (27A266a), and Swift 6.4, debug and release builds passed using temporary SwiftPM scratch paths. Tests cover telemetry, subprocess cleanup, history, Ollama transport, and GGUF metadata.
+- [x] On an Apple M4 Max running macOS 26.6.2 (25G83), Xcode 27.0 (27A266a), and Swift 6.4, debug and release builds and all 30 tests passed. Tests cover telemetry, subprocess cleanup, history, Ollama transport, and GGUF metadata.
 - [x] Standard-user device utilization followed a bounded Metal workload on this M4 Max. The Metal device and `IOAccelerator` reported the same registry ID. See the results below.
 - [x] `ioreg` exposed the candidate allocation keys and AGX `accumulatedGPUTime` entries. `footprint -h` advertised PID and JSON options. Units, graphics accounting, and access coverage still need validation.
 - [x] Added a native AGX client sampler and sortable, filterable SwiftUI process table. Two overlapping workloads were attributed to the correct PIDs through the Terminal probe, including after the first workload exited.
@@ -40,12 +40,13 @@ Expect physical memory, default Metal device information, device activity, and a
 - [x] Moved activity and footprint collection into a shared actor used by the window and versioned Terminal snapshots. On the M4 Max a before/load comparison showed a 35 percentage-point increase and correctly identified the new workload row. The capture included the workload's positive GPU rate and a footprint observation.
 - [x] Added a five-minute Swift Charts view using the existing activity poll. Verified a live trace above the process table and a fresh single point on reopening in a temporary release app bundle. Verified that JSON snapshots still export schema 1.
 - [x] Added an opt-in Ollama inspector under **Loaded Models**. Verified that the app displays the unreachable state on this Mac and renders all supported metadata from a one-shot loopback fixture. The test suite uses ephemeral loopback listeners and needs no Ollama installation or downloaded models.
-- [x] Added a GGUF file picker and bounded metadata reader. Synthetic v2/v3 files exercise metadata, tokenizer arrays, and tensor offsets. Real model-file compatibility remains to be sampled.
+- [x] Added a GGUF file picker and bounded metadata reader. Synthetic v2/v3 files exercise metadata, tokenizer arrays, and tensor offsets. The Homebrew-installed app opened a synthetic v3 file and showed its name, architecture, file type, context length, tensor count, and version. Real model-file compatibility remains open.
 
 ### Distribution
 
-- GitHub repository visibility is public. The [GitHub Pages workflow](.github/workflows/pages.yml) publishes the [project site](https://digital-defiance.github.io/MetalTask/) from `docs/`.
-- The source release uses version `v0.1.0`. The Homebrew formula builds the Swift executable and uses `scripts/package-app.sh` to assemble and ad hoc sign the installed app bundle. See [README.md](README.md) for install commands. Developer ID signing, notarization, and macOS 14 runtime validation remain release work.
+- GitHub repository visibility is public. The first [GitHub Pages workflow run](https://github.com/Digital-Defiance/MetalTask/actions/runs/43499738938) succeeded. The GitHub Pages URL redirects to the configured custom domain, where the site returned HTTP 200. GitHub had yet to issue the domain's HTTPS certificate. Check Settings → Pages for certificate status, then enable Enforce HTTPS and verify the secure URL.
+- The [v0.1.0 source release](https://github.com/Digital-Defiance/MetalTask/releases/tag/v0.1.0) is published. The [public Homebrew formula](https://github.com/Digital-Defiance/homebrew-tap/blob/main/Formula/metaltask.rb) is on tap `main` at `4c144a7`. The local tap checkout at `/Volumes/Code/homebrew-tap` has the same formula.
+- Verified `brew install --build-from-source digital-defiance/tap/metaltask`, `brew test digital-defiance/tap/metaltask`, `metaltask --sample-gpu`, and launch from the installed app bundle. Homebrew installed `0.1.0_1`. The formula builds and ad hoc signs the app locally. Developer ID signing, notarization, and macOS 14 runtime validation remain release work.
 - [ ] The macOS 14 deployment target still needs runtime validation. Additional Apple Silicon generations, wake behavior, broader process and footprint coverage, model adapters, and distribution remain open.
 
 ## Device utilization validation
